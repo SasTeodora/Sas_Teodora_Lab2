@@ -17,23 +17,26 @@ public class IndexModel : PageModel
 
     public IList<Book> Book { get; set; } = default!;
 
-    public SelectList AuthorList { get; set; } = default!;
-
-    public async Task OnGetAsync()
+    public BookData BookD { get; set; }
+    public int BookID { get; set; }
+    public int CategoryID { get; set; }
+    public async Task OnGetAsync(int? id, int? categoryID)
     {
-        Book = await _context.Book
-            .Include(b => b.Publisher)
-            .Include(b => b.Author)
-            .ToListAsync();
-
-        var authors = await _context.Authors
-            .Select(a => new
-            {
-                a.ID,
-                FullName = a.FirstName + " " + a.LastName
-            })
-            .ToListAsync();
-
-        AuthorList = new SelectList(authors, "ID", "FullName");
+        BookD = new BookData();
+        //se va include Author conform cu sarcina de la lab 2
+        BookD.Books = await _context.Book
+        .Include(b => b.Publisher)
+        .Include(b => b.BookCategories)
+        .ThenInclude(b => b.Category)
+        .AsNoTracking()
+        .OrderBy(b => b.Title)
+        .ToListAsync();
+        if (id != null)
+        {
+            BookID = id.Value;
+            Book book = BookD.Books
+            .Where(i => i.ID == id.Value).Single();
+            BookD.Categories = book.BookCategories.Select(s => s.Category);
+        }
     }
 }
